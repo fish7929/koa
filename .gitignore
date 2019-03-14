@@ -3,6 +3,7 @@ npm-debug.log
 package-lock.json
 node_modules
 dist
+upload-files
 *.swp
 *.swo
 .idea/

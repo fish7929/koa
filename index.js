@@ -8,7 +8,8 @@
 
 const Koa = require('koa');
 const fs = require('fs');   //文件读写
-
+const path = require('path');
+const static = require('koa-static');
 //generator中间件开发   需要转换 convert使用  app.use(convert(loggerGenerator()));
 // const convert = require('koa-convert');
 // const loggerGenerator = require("./middleware/logger-generator");
@@ -21,8 +22,17 @@ const bodyParser = require('koa-bodyparser');    // 使用ctx.body解析中间�
 const app = new Koa();
 
 app.use(loggerAsync());
+
 // 使用ctx.body解析中间件
 app.use(bodyParser());
+
+//静态文件访问
+// const staticPath = './static';
+// app.use(static(path.join(__dirname, staticPath)));
+
+/******* 使用模板引擎 *****/
+const views = require('koa-views');
+
 /*******简单的路由配置开始***********/
 // /**
 //  * 用Promise封装异步读取文件方法
@@ -177,11 +187,11 @@ app.use(bodyParser());
 //     }
 // });
 //静态资源koa-static中间件使用
-const static = require('koa-static');
-const path = require('path');
+// const static = require('koa-static');
+// const path = require('path');
 // 静态资源目录对于相对入口文件index.js的路径
-const staticPath = './static';
-app.use(static(path.join(__dirname, staticPath)));
+// const staticPath = './static';
+// app.use(static(path.join(__dirname, staticPath)));
 //默认其他是hello world
 //cookies  配置
 // app.use(async (ctx) => {
@@ -204,57 +214,104 @@ app.use(static(path.join(__dirname, staticPath)));
 //     }
 // });
 
-// session 配置
-const session = require('koa-session-minimal');
-const MysqlSession = require('koa-mysql-session');
+/****** session 配置 ********/
+// const session = require('koa-session-minimal');
+// const MysqlSession = require('koa-mysql-session');
 
-// 配置存储session信息的mysql
-let store = new MysqlSession({
-    user: 'root',
-    password: '123456',
-    database: 'koa_demo',
-    host: '127.0.0.1',
-    port: '3306'
-});
+// // 配置存储session信息的mysql
+// let store = new MysqlSession({
+//     user: 'root',
+//     password: 'pass123456',
+//     database: 'koa_demo',   //create database koa_demo;
+//     host: '127.0.0.1',
+//     port: '3306'
+// });
 
-// 存放sessionId的cookie配置
-let cookie = {
-    maxAge: '', // cookie有效时长
-    expires: '',  // cookie失效时间
-    path: '', // 写cookie所在的路径
-    domain: '', // 写cookie所在的域名
-    httpOnly: '', // 是否只用于http请求中获取
-    overwrite: '',  // 是否允许重写
-    secure: '',
-    sameSite: '',
-    signed: ''
-}
+// // 存放sessionId的cookie配置
+// let cookie = {
+//     maxAge: '', // cookie有效时长
+//     expires: '',  // cookie失效时间
+//     path: '', // 写cookie所在的路径
+//     domain: '', // 写cookie所在的域名
+//     httpOnly: '', // 是否只用于http请求中获取
+//     overwrite: '',  // 是否允许重写
+//     secure: '',
+//     sameSite: '',
+//     signed: ''
+// }
 
-// 使用session中间件
-app.use(session({
-    key: 'SESSION_ID',
-    store: store,
-    cookie: cookie
-}));
+// // 使用session中间件
+// app.use(session({
+//     key: 'SESSION_ID',
+//     store: store,
+//     cookie: cookie
+// }));
 
+// app.use(async (ctx) => {
+
+//     // 设置session
+//     if (ctx.url === '/set') {
+//         ctx.session = {
+//             user_id: Math.random().toString(36).substr(2),
+//             count: 0
+//         }
+//         ctx.body = ctx.session
+//     } else if (ctx.url === '/') {
+
+//         // 读取session信息
+//         ctx.session.count = ctx.session.count + 1
+//         ctx.body = ctx.session
+//     }
+
+// })
+/******* 使用模板引擎 *****/
+// const views = require('koa-views');
+
+// // 加载模板引擎  ejs 模板  ejs模板引擎
+// app.use(views(path.join(__dirname, './view'), {
+//     extension: 'ejs'
+// }));
+// //渲染模板文件
+// app.use(async (ctx) => {
+//     let title = 'hello koa2';
+//     await ctx.render('index', {
+//         title,
+//     })
+// });
+/********busboy 是用来解析出请求中文件流 ******/
+const { uploadFile } = require('./util/upload');
 app.use(async (ctx) => {
 
-    // 设置session
-    if (ctx.url === '/set') {
-        ctx.session = {
-            user_id: Math.random().toString(36).substr(2),
-            count: 0
-        }
-        ctx.body = ctx.session
-    } else if (ctx.url === '/') {
+    if (ctx.url === '/' && ctx.method === 'GET') {
+        // 当GET请求时候返回表单页面
+        let html = `
+        <h1>koa2 upload demo</h1>
+        <form method="POST" action="/upload.json" enctype="multipart/form-data">
+          <p>file upload</p>
+          <span>picName:</span><input name="picName" type="text" /><br/>
+          <input name="file" type="file" /><br/><br/>
+          <button type="submit">submit</button>
+        </form>
+      `
+        ctx.body = html
 
-        // 读取session信息
-        ctx.session.count = ctx.session.count + 1
-        ctx.body = ctx.session
+    } else if (ctx.url === '/upload.json' && ctx.method === 'POST') {
+        // 上传文件请求处理
+        let result = { success: false }
+        let serverFilePath = path.join(__dirname, 'upload-files')
+
+        // 上传文件事件  保存地址 /upload-files/album/filename
+        result = await uploadFile(ctx, {
+            fileType: 'album', // common or album
+            path: serverFilePath
+        })
+
+        ctx.body = result
+    } else {
+        // 其他请求显示404
+        ctx.body = '<h1>404！！！ o(╯□╰)o</h1>'
     }
-
 })
-
 app.listen(3000, () => {
     console.log('[demo] start-quick is starting at port 3000');
 });
