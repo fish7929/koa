@@ -10,6 +10,7 @@ const Koa = require('koa');
 const fs = require('fs');   //文件读写
 const path = require('path');
 const static = require('koa-static');
+const views = require('koa-views');
 //generator中间件开发   需要转换 convert使用  app.use(convert(loggerGenerator()));
 // const convert = require('koa-convert');
 // const loggerGenerator = require("./middleware/logger-generator");
@@ -18,20 +19,23 @@ const static = require('koa-static');
 const loggerAsync = require("./middleware/logger-async");
 
 const bodyParser = require('koa-bodyparser');    // 使用ctx.body解析中间件
+const jsonp = require('koa-jsonp');    // jsonp使用
 
 const app = new Koa();
 
 app.use(loggerAsync());
+// 使用中间件
+app.use(jsonp());
 
 // 使用ctx.body解析中间件
 app.use(bodyParser());
 
-//静态文件访问
+// 静态文件访问
 // const staticPath = './static';
 // app.use(static(path.join(__dirname, staticPath)));
 
 /******* 使用模板引擎 *****/
-const views = require('koa-views');
+// const views = require('koa-views');
 
 /*******简单的路由配置开始***********/
 // /**
@@ -279,39 +283,209 @@ const views = require('koa-views');
 //     })
 // });
 /********busboy 是用来解析出请求中文件流 ******/
-const { uploadFile } = require('./util/upload');
-app.use(async (ctx) => {
+// const { uploadFile } = require('./util/upload');
+// app.use(async (ctx) => {
 
-    if (ctx.url === '/' && ctx.method === 'GET') {
-        // 当GET请求时候返回表单页面
-        let html = `
-        <h1>koa2 upload demo</h1>
-        <form method="POST" action="/upload.json" enctype="multipart/form-data">
-          <p>file upload</p>
-          <span>picName:</span><input name="picName" type="text" /><br/>
-          <input name="file" type="file" /><br/><br/>
-          <button type="submit">submit</button>
-        </form>
-      `
-        ctx.body = html
+//     if (ctx.url === '/' && ctx.method === 'GET') {
+//         // 当GET请求时候返回表单页面
+//         let html = `
+//         <h1>koa2 upload demo</h1>
+//         <form method="POST" action="/upload.json" enctype="multipart/form-data">
+//           <p>file upload</p>
+//           <span>picName:</span><input name="picName" type="text" /><br/>
+//           <input name="file" type="file" /><br/><br/>
+//           <button type="submit">submit</button>
+//         </form>
+//       `
+//         ctx.body = html
 
-    } else if (ctx.url === '/upload.json' && ctx.method === 'POST') {
-        // 上传文件请求处理
-        let result = { success: false }
-        let serverFilePath = path.join(__dirname, 'upload-files')
+//     } else if (ctx.url === '/upload.json' && ctx.method === 'POST') {
+//         // 上传文件请求处理
+//         let result = { success: false }
+//         let serverFilePath = path.join(__dirname, 'upload-files')
 
-        // 上传文件事件  保存地址 /upload-files/album/filename
-        result = await uploadFile(ctx, {
-            fileType: 'album', // common or album
-            path: serverFilePath
-        })
+//         // 上传文件事件  保存地址 /upload-files/album/filename
+//         result = await uploadFile(ctx, {
+//             fileType: 'album', // common or album
+//             path: serverFilePath
+//         })
 
-        ctx.body = result
-    } else {
-        // 其他请求显示404
-        ctx.body = '<h1>404！！！ o(╯□╰)o</h1>'
+//         ctx.body = result
+//     } else {
+//         // 其他请求显示404
+//         ctx.body = '<h1>404！！！ o(╯□╰)o</h1>'
+//     }
+// })
+
+/********busboy 是用来解析出请求中文件流 异步上传开始 ******/
+// const { uploadFile } = require('./util/upload');
+// /**
+//  * 使用第三方中间件 start 
+// */
+// app.use(views(path.join(__dirname, './view'), {
+//     extension: 'ejs'
+// }))
+
+// // 静态资源目录对于相对入口文件index.js的路径
+// const staticPath = './static'
+
+// app.use(static(
+//     path.join(__dirname, staticPath)
+// ))
+// /**
+//  * 使用第三方中间件 end 
+// */
+// app.use(async (ctx) => {
+//     if (ctx.method === 'GET') {
+//         let title = 'upload pic async'
+//         await ctx.render('index', {
+//             title,
+//         })
+//     } else if (ctx.url === '/api/picture/upload.json' && ctx.method === 'POST') {
+//         // 上传文件请求处理
+//         let result = { success: false }
+//         let serverFilePath = path.join(__dirname, 'static/image')
+
+//         // 上传文件事件
+//         result = await uploadFile(ctx, {
+//             fileType: 'album',
+//             path: serverFilePath
+//         })
+//         ctx.body = result
+//     } else {
+//         // 其他请求显示404
+//         ctx.body = '<h1>404！！！ o(╯□╰)o</h1>'
+//     }
+
+// })
+/********busboy 是用来解析出请求中文件流 异步上传结束******/
+
+
+/*** 测试mysql start**********/
+
+// const getSqlContentMap = require('./util/get-sql-content-map');
+// const { query } = require('./util/db');
+// // 打印脚本执行日志
+// const eventLog = function (err, sqlFile, index) {
+//     if (err) {
+//         console.log(`[ERROR] sql脚本文件: ${sqlFile} 第${index + 1}条脚本 执行失败 o(╯□╰)o ！`)
+//     } else {
+//         console.log(`[SUCCESS] sql脚本文件: ${sqlFile} 第${index + 1}条脚本 执行成功 O(∩_∩)O !`)
+//     }
+// }
+
+// // 获取所有sql脚本内容
+// let sqlContentMap = getSqlContentMap()
+
+// // 执行建表sql脚本
+// const createAllTables = async () => {
+//     for (let key in sqlContentMap) {
+//         let sqlShell = sqlContentMap[key]
+//         let sqlShellList = sqlShell.split(';')
+
+//         for (let [i, shell] of sqlShellList.entries()) {
+//             if (shell.trim()) {
+//                 let result = await query(shell)
+//                 if (result.serverStatus * 1 === 2) {
+//                     eventLog(null, key, i)
+//                 } else {
+//                     eventLog(true, key, i)
+//                 }
+//             }
+//         }
+//     }
+//     console.log('sql脚本执行结束！')
+//     console.log('请按 ctrl + c 键退出！')
+
+// }
+
+// createAllTables();
+
+/*** 测试mysql end**********/
+
+/********** 实现jsonp开始 ************/
+// app.use(async (ctx) => {
+//     // 如果jsonp 的请求为GET
+//     if (ctx.method === 'GET' && ctx.url.split('?')[0] === '/getData.jsonp') {
+
+//         // 获取jsonp的callback
+//         let callbackName = ctx.query.callback || 'callback'
+//         let returnData = {
+//             success: true,
+//             data: {
+//                 text: 'this is a jsonp api',
+//                 time: new Date().getTime(),
+//             }
+//         }
+
+//         // jsonp的script字符串
+//         let jsonpStr = `;${callbackName}(${JSON.stringify(returnData)})`
+
+//         // 用text/javascript，让请求支持跨域获取
+//         ctx.type = 'text/javascript'
+
+//         // 输出jsonp字符串
+//         ctx.body = jsonpStr
+
+//     } else {
+
+//         ctx.body = 'hello jsonp'
+
+//     }
+// })
+/********** 实现jsonp结束 ************/
+
+/********** 实现jsonp中间件开始 ************/
+// app.use(async (ctx) => {
+
+//     let returnData = {
+//         success: true,
+//         data: {
+//             text: 'this is a jsonp api',
+//             time: new Date().getTime(),
+//         }
+//     }
+
+//     ctx.body = returnData
+// })
+/********** 实现jsonp中间件结束 ************/
+
+/*****  单元测试 开始****/
+const server = async (ctx, next) => {
+    let result = {
+        success: true,
+        data: null
     }
-})
+
+    if (ctx.method === 'GET') {
+        if (ctx.url === '/getString.json') {
+            result.data = 'this is string data'
+        } else if (ctx.url === '/getNumber.json') {
+            result.data = 123456
+        } else {
+            result.success = false
+        }
+        ctx.body = result
+        next && next()
+    } else if (ctx.method === 'POST') {
+        if (ctx.url === '/postData.json') {
+            result.data = 'ok'
+        } else {
+            result.success = false
+        }
+        ctx.body = result
+        next && next()
+    } else {
+        ctx.body = 'hello world'
+        next && next()
+    }
+}
+
+app.use(server)
+
+module.exports = app
+/*****  单元测试 结束****/
+
 app.listen(3000, () => {
     console.log('[demo] start-quick is starting at port 3000');
 });

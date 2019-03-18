@@ -4,7 +4,8 @@
   "description": "study koa2",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "test": "./node_modules/.bin/mocha"
   },
   "homepage": "https://github.com/fish7929/koa.git",
   "repository": {
@@ -18,14 +19,21 @@
     "ejs": "^2.6.1",
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",
+    "koa-jsonp": "^2.0.2",
     "koa-mysql-session": "0.0.2",
     "koa-router": "^7.4.0",
     "koa-session-minimal": "^3.0.4",
     "koa-static": "^5.0.0",
-    "koa-views": "^6.1.5"
+    "koa-views": "^6.1.5",
+    "mysql": "^2.16.0"
   },
   "engines": {
     "node": ">=7.6.0",
     "npm": ">=3.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^6.0.2",
+    "supertest": "^4.0.2"
   }
 }
